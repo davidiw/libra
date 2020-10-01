@@ -32,6 +32,8 @@ pub(crate) struct PeerSyncState {
 pub(crate) struct PeerManager {
     upstream_config: UpstreamConfig,
     peer_info: Mutex<PeerInfo>,
+    // Oh this is interesting, we'll need to definitely work on this as part of our vfn reliability
+    // story
     // the upstream peer to failover to if all peers in the primary upstream network are dead
     // the number of failover peers is limited to 1 to avoid network competition in the failover networks
     failover_peer: Mutex<Option<PeerNetworkId>>,
@@ -113,6 +115,7 @@ impl PeerManager {
     }
 
     pub fn disable_peer(&self, peer: PeerNetworkId) {
+        // Yeah another case where you get the lock drop it and just get it again next
         if let Some(state) = self
             .peer_info
             .lock()
@@ -131,12 +134,15 @@ impl PeerManager {
             return;
         }
 
+        // Prefer unwrap over expect, imo
         // declare `failover` as standalone to satisfy lifetime requirement
         let mut failover = self
             .failover_peer
             .lock()
             .expect("failed to acquire failover lock");
         let current_failover = failover.deref_mut();
+        // You drop the lock so that you can maybe get it later? maybe we should just pass in a
+        // mutable reference? Prefer unwrap over expect, imo
         let peer_info = self.peer_info.lock().expect("can not get peer info lock");
         let active_peers_by_network = peer_info
             .iter()
@@ -189,6 +195,8 @@ impl PeerManager {
             // a failover peer
             *current_failover = None;
         }
+        // So in either case we updated our fail over, but we didn't log it or keep track that we
+        // have a valid failover, this could be a gauge counter
     }
 
     pub fn update_peer_broadcast(
@@ -342,6 +350,7 @@ impl PeerManager {
         // self-broadcasted and make no actual progress.
         // So until self-connection is actively checked against for in the networking layer, mempool
         // will temporarily broadcast to all peers in its selected failover network as well
+        // why mutex over rwlock? rwlock seems more preferable
         self.failover_peer
             .lock()
             .expect("failed to get failover peer")

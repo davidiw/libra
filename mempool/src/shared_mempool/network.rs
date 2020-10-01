@@ -47,6 +47,8 @@ pub const MEMPOOL_DIRECT_SEND_PROTOCOL: &[u8] = b"/libra/direct-send/0.1.0/mempo
 /// `channel::Receiver<PeerManagerNotification>`.
 pub type MempoolNetworkEvents = NetworkEvents<MempoolSyncMsg>;
 
+// All this is really boiler plate code that Greg and Philip should try to eliminate with either
+// some nice composition or a macro...
 /// The interface from Mempool to Networking layer.
 ///
 /// This is a thin wrapper around a `NetworkSender<MempoolSyncMsg>`, so it is
@@ -60,6 +62,7 @@ pub struct MempoolNetworkSender {
     inner: NetworkSender<MempoolSyncMsg>,
 }
 
+// This function is kinda weirdly placed in the middle here
 /// Create a new Sender that only sends for the `MEMPOOL_DIRECT_SEND_PROTOCOL` ProtocolId and a
 /// Receiver (Events) that explicitly returns only said ProtocolId.
 pub fn network_endpoint_config(

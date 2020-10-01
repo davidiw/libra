@@ -174,6 +174,8 @@ where
         counters::SHARED_MEMPOOL_TRANSACTION_BROADCAST
             .with_label_values(&[peer_id])
             .observe(txns_ct as f64);
+        // instead of having this counter, you could just have the previous one and an ack, then
+        // you can compute the pending
         counters::SHARED_MEMPOOL_PENDING_BROADCASTS_COUNT
             .with_label_values(&[peer_id])
             .inc();
@@ -235,6 +237,7 @@ pub(crate) async fn process_transaction_broadcast<V>(
 ) where
     V: TransactionValidation,
 {
+    // Have you considered a generic inbound timer at the loop and do it in one place
     let _timer = counters::PROCESS_TXN_SUBMISSION_LATENCY
         .with_label_values(&[&peer.peer_id().to_string()])
         .start_timer();
@@ -407,6 +410,9 @@ fn log_txn_process_results(results: &[SubmissionStatusBundle], sender: Option<Pe
     };
     for (txn, (mempool_status, maybe_vm_status)) in results.iter() {
         if let Some(vm_status) = maybe_vm_status {
+            // This is not right, we should not be logging arbitrary transactions, if we really
+            // want this, we should have some conditionals on who this is from but we should also
+            // lower this to trace
             // log vm validation failure
             error!(
                 SecurityEvent::InvalidTransactionMempool,
@@ -419,6 +425,7 @@ fn log_txn_process_results(results: &[SubmissionStatusBundle], sender: Option<Pe
                 .inc();
             continue;
         }
+        // Maybe better to convert this to a String and then have a single call to the counter afterward
         match mempool_status.code {
             MempoolStatusCode::Accepted => {
                 counters::SHARED_MEMPOOL_TRANSACTIONS_PROCESSED
@@ -453,10 +460,15 @@ pub(crate) async fn process_state_sync_request(
     let result = if req
         .callback
         .send(Ok(CommitResponse {
+            // Would be better as an option instead of an empty string
             msg: "".to_string(),
         }))
         .is_err()
     {
+        // Like this isn't particularly useful, the counter should be good enough and in general if
+        // there is only one type of error coming back from these functions, a log likely won't
+        // help you, so we could consider eliminating logs for channels not sending unless there is
+        // additional information or error types (like the remote side closed versus out of space)
         error!(LogSchema::event_log(
             LogEntry::StateSyncCommit,
             LogEvent::CallbackFail
@@ -465,6 +477,8 @@ pub(crate) async fn process_state_sync_request(
     } else {
         counters::REQUEST_SUCCESS_LABEL
     };
+    // Interesting motivation for not using a timer, but I would probably consider making this a
+    // counter and a timer, unless these failures happen so frequently
     let latency = start_time.elapsed();
     counters::MEMPOOL_SERVICE_LATENCY
         .with_label_values(&[counters::COMMIT_STATE_SYNC_LABEL, result])
@@ -539,6 +553,8 @@ async fn commit_txns(
     block_timestamp_usecs: u64,
     is_rejected: bool,
 ) {
+    // Another approach is to have a function that returns the mutuable mempool, so you can avoid
+    // this boiler plate over and over again
     let mut pool = mempool
         .lock()
         .expect("[shared mempool] failed to get mempool lock");

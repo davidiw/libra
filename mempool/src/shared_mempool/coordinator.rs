@@ -76,6 +76,7 @@ pub(crate) async fn coordinator<V>(
                 let _ = counters::TASK_SPAWN_LATENCY
                 .with_label_values(&[counters::CLIENT_EVENT_LABEL])
                 .start_timer();
+                // Do we beenfit from the bounding of this? are we spawning additional tasks?
                 bounded_executor
                 .spawn(tasks::process_client_transaction_submission(
                     smp.clone(),
@@ -98,6 +99,7 @@ pub(crate) async fn coordinator<V>(
                 let _ = counters::TASK_SPAWN_LATENCY
                     .with_label_values(&[counters::RECONFIG_EVENT_LABEL])
                     .start_timer();
+                // Do we beenfit from the bounding of this? are we spawning additional tasks?
                 bounded_executor
                     .spawn(tasks::process_config_update(config_update, smp.validator.clone()))
                     .await;
@@ -154,6 +156,8 @@ pub(crate) async fn coordinator<V>(
                                         let _ = counters::TASK_SPAWN_LATENCY
                                             .with_label_values(&[counters::PEER_BROADCAST_EVENT_LABEL])
                                             .start_timer();
+                                        // Do we beenfit from the bounding of this? are we spawning
+                                        // additional tasks?
                                         bounded_executor
                                             .spawn(tasks::process_transaction_broadcast(
                                                 smp_clone,
@@ -171,6 +175,10 @@ pub(crate) async fn coordinator<V>(
                                 };
                             }
                             Event::RpcRequest((peer_id, msg, res_tx)) => {
+                                // An error should only be used for internal errors, errors that
+                                // can be directly initiated by outside should be debug if not
+                                // trace. these can be turned on dynamically. instead we should
+                                // probably use counters
                                 error!(
                                     SecurityEvent::InvalidNetworkEventMempool,
                                     message = msg,
@@ -180,6 +188,9 @@ pub(crate) async fn coordinator<V>(
                         }
                     },
                     Err(e) => {
+                        // This is a good example of a more legitimate reason to call error, but I
+                        // would argue this shouldn't be a security event but rather a mempool
+                        // invariant.
                         error!(
                             SecurityEvent::InvalidNetworkEventMempool,
                             error = e.to_string()
@@ -198,13 +209,18 @@ pub(crate) async fn coordinator<V>(
 
 /// GC all expired transactions by SystemTTL
 pub(crate) async fn gc_coordinator(mempool: Arc<Mutex<CoreMempool>>, gc_interval_ms: u64) {
+    // Why is this info level? It would seem just recording this in a histogram timer woulbe good
+    // since that would also tell you that the event is still occurring as well
     info!(LogSchema::event_log(LogEntry::GCRuntime, LogEvent::Start));
     let mut interval = interval(Duration::from_millis(gc_interval_ms));
     while let Some(_interval) = interval.next().await {
+        // Just use a counter if this is all you're getting
         sample!(
             SampleRate::Duration(Duration::from_secs(60)),
             info!(LogSchema::event_log(LogEntry::GCRuntime, LogEvent::Live))
         );
+        // Fine to use unwrap since something nasty happened if this fails and we're blowing up
+        // anyway, the stack trace will make it clear where we blew up
         mempool
             .lock()
             .expect("[shared mempool] failed to acquire mempool lock")

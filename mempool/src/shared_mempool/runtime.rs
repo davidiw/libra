@@ -97,6 +97,7 @@ pub fn bootstrap(
     state_sync_requests: Receiver<CommitNotification>,
     mempool_reconfig_events: libra_channel::Receiver<(), OnChainConfigPayload>,
 ) -> Runtime {
+    // there is no log that mempool has been started
     let runtime = Builder::new()
         .thread_name("shared-mem-")
         .threaded_scheduler()
