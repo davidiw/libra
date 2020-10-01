@@ -201,6 +201,11 @@ pub static SHARED_MEMPOOL_TRANSACTION_BROADCAST: Lazy<HistogramVec> = Lazy::new(
     .unwrap()
 });
 
+// I think it might be interesting to tweak the architecture of coordinator such that we can place
+// within it a timer for startup and executuion within the same scope... something like spawning an
+// async closure, something akin to
+// https://github.com/libra/libra/blob/master/consensus/safety-rules/src/safety_rules.rs#L442
+// also would consider a single counter with two layers of labels
 pub static TASK_SPAWN_LATENCY: Lazy<HistogramVec> = Lazy::new(|| {
     register_histogram_vec!(
         "libra_mempool_bounded_executor_spawn_latency",
@@ -210,6 +215,8 @@ pub static TASK_SPAWN_LATENCY: Lazy<HistogramVec> = Lazy::new(|| {
     .unwrap()
 });
 
+// All of the below are invariant, afaiu, you could make labels and a single counter that way you
+// can alert on any any error within a single counter
 pub static CORE_MEMPOOL_INVARIANT_VIOLATION_COUNT: Lazy<IntCounter> = Lazy::new(|| {
     register_int_counter!(
         "libra_mempool_core_mempool_invariant_violated_count",

@@ -20,6 +20,7 @@ use std::{
 
 pub type AccountTransactions = BTreeMap<u64, MempoolTransaction>;
 
+// Where do we ordering by governance? What is the definition of governance?
 /// PriorityIndex represents main Priority Queue in Mempool
 /// It's used to form transaction block for Consensus
 /// Transactions are ordered by gas price. Second level ordering is done by expiration time

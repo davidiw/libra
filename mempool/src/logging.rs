@@ -24,6 +24,8 @@ impl TxnsLog {
 
     pub fn new_txn(account: AccountAddress, seq_num: u64) -> Self {
         Self {
+            // when reading these in a log it would be easier if it was just a single tuple
+            // instead of two sets of values
             txns: vec![(account, seq_num)],
             status: vec![],
         }

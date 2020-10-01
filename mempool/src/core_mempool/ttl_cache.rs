@@ -35,6 +35,8 @@ where
         self.data.get(key).map(|v| &v.value)
     }
 
+    // Consider a doc block here that defines the inner behavior, namely that insert on exist
+    // results in an update, behavior on full or place this at the TtlStruct layer
     pub fn insert(&mut self, key: K, value: V) {
         // remove old entry if it exists
         match self.data.get(&key) {
@@ -85,6 +87,7 @@ where
         self.ttl_index.append(&mut active);
     }
 
+    // why make this test only?
     #[cfg(test)]
     pub fn size(&self) -> usize {
         self.data.len()
