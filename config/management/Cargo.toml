@@ -16,7 +16,7 @@ serde = { version = "1.0.117", features = ["rc"], default-features = false }
 serde_yaml = "0.8.14"
 structopt = "0.3.20"
 thiserror = "1.0.22"
-toml = { version = "0.5.7", default-features = false }
+toml = { version = "0.5.8", default-features = false }
 
 lcs = { version = "0.1.0", package = "libra-canonical-serialization" }
 libra-config = { path = "..", version = "0.1.0"}
