@@ -1,8 +1,11 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::json_rpc::JsonRpcClientWrapper;
+use diem_config::config::RoleType;
 use diem_management::error::Error;
-use diem_network_address::NetworkAddress;
+use diem_network_address::{NetworkAddress, encrypted::{Key, KeyVersion, KEY_LEN}};
+use diem_network_address_encryption::Encryptor;
 use std::{
     io::{Read, Write},
     net::{TcpStream, ToSocketAddrs},
@@ -77,6 +80,73 @@ impl CheckEndpoint {
             "No addresses responded correctly".to_string(),
             last_error,
         ))
+    }
+}
+
+#[derive(Debug, StructOpt)]
+pub struct CheckValidatorSetEndpoints {
+    /// JSON-RPC Endpoint (e.g. http://localhost:8080)
+    #[structopt(long, required_unless = "config")]
+    json_server: String,
+    /// Specifies whether or not to evaluate validators or fullnodes
+    #[structopt(long)]
+    role: RoleType,
+    /// The expected on-chain key, only required for validator checks
+    #[structopt(long, required_if("role", "validator"), parse(try_from_str = parse_hex))]
+    key: Option<Key>,
+    /// The expected on-chain key version, only required for validator checks
+    #[structopt(long, required_if("role", "validator"))]
+    version: Option<KeyVersion>,
+}
+
+fn parse_hex(src: &str) -> Result<Key, Error> {
+    let potential_err_msg = format!("Not a valid encryption key: {}", src);
+    let value_slice = match hex::decode(src.trim()) {
+        Ok(value_slice) => {
+            if value_slice.len() != KEY_LEN {
+                Err(Error::CommandArgumentError(potential_err_msg))
+            } else {
+                Ok(value_slice)
+            }
+        }
+        Err(_) => Err(Error::CommandArgumentError(potential_err_msg)),
+    }?;
+
+    let mut value = [0; KEY_LEN];
+    value.copy_from_slice(&value_slice);
+    Ok(value)
+}
+
+impl CheckValidatorSetEndpoints {
+    pub fn execute(self) -> Result<String, Error> {
+        let encryptor = match self.role {
+            RoleType::FullNode => Encryptor::for_testing(),
+            RoleType::Validator => {
+                Encryptor::for_testing();
+                let mut encryptor = Encryptor::for_testing();
+                // These shouldn't fail
+                encryptor.add_key(self.version.unwrap(), self.key.unwrap()).unwrap();
+                encryptor.set_current_version(self.version.unwrap()).unwrap();
+                encryptor
+            }
+        };
+
+        let client = JsonRpcClientWrapper::new(self.json_server);
+        let validator_set = crate::validator_set::decode_validator_set(encryptor, client, None)?;
+
+        for info in validator_set {
+            let address = match self.role {
+                RoleType::FullNode => info.fullnode_network_address.clone(),
+                RoleType::Validator => info.validator_network_address.clone(),
+            };
+            let check_endpoint = CheckEndpoint { address };
+            match check_endpoint.execute() {
+                Ok(_) => println!("{} -- good", info.name),
+                Err(err) => println!("{} -- bad -- {}", info.name, err),
+            };
+        }
+
+        Ok("Complete!".to_string())
     }
 }
 
