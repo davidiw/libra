@@ -1278,7 +1278,11 @@ impl ClientProxy {
         address: &AccountAddress,
     ) -> Result<Option<views::AccountView>> {
         let account = self.client.get_account(address)?;
-        self.client.update_and_verify_state_proof()?;
+        // This isn't used by anything except to keep track of the current version and to simulate
+        // some potential verifiable clients, which is yet to be implemented. It also has some
+        // challenges in handling retries if the upstream hasn't yet arrived at the expected
+        // version and breaks with our testnet deployment, so disabling this for now.
+        // self.client.update_and_verify_state_proof()?;
 
         if let Some(ref ac) = account.as_ref() {
             self.update_account_seq(address, ac.sequence_number)
