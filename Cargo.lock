@@ -662,6 +662,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4964518bd3b4a8190e832886cdc0da9794f12e8e6c1613a9e90ff331c4c8724b"
 
 [[package]]
+name = "camino"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd065703998b183ed0b348a22555691373a9345a1431141e5778b48bb17e4703"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "cargo-platform"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -721,6 +730,15 @@ name = "cfg-expr"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cb4f9cf6cb58661f5cdcda0240ab42788e009bd957ba56c1367aa01c7c6fbc05"
+dependencies = [
+ "smallvec",
+]
+
+[[package]]
+name = "cfg-expr"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b81b9640fc656040fbf0d3f2bafacadcf17d55f2b0dc89589c1b80b0658fd5a"
 dependencies = [
  "smallvec",
 ]
@@ -1385,7 +1403,7 @@ checksum = "6f862ffb07525089b200b5bd75d2be5a35eebb529cf1118511827a3929358b21"
 dependencies = [
  "cfg-if 1.0.0",
  "globset",
- "guppy",
+ "guppy 0.7.2",
  "itertools 0.10.0",
  "once_cell",
  "petgraph",
@@ -3319,13 +3337,13 @@ dependencies = [
 
 [[package]]
 name = "guppy"
-version = "0.7.0"
+version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63cc63895eaea7ace65b2818019602b5d150556954e25048e5a1b56c0b0da4af"
+checksum = "bf1c6ce38a18b386305494e4b38a137b2c1a48f368cce1e65e8efbf4dbeeb6f8"
 dependencies = [
  "cargo_metadata",
  "fixedbitset",
- "guppy-summaries",
+ "guppy-summaries 0.3.2",
  "indexmap",
  "itertools 0.10.0",
  "nested",
@@ -3337,15 +3355,53 @@ dependencies = [
  "serde",
  "serde_json",
  "supercow",
- "target-spec",
+ "target-spec 0.6.1",
+]
+
+[[package]]
+name = "guppy"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec4cbddce827d660864974dc3dc62a1c810e813d17e518cc5830716b977cd110"
+dependencies = [
+ "camino",
+ "cargo_metadata",
+ "fixedbitset",
+ "guppy-summaries 0.4.0",
+ "indexmap",
+ "itertools 0.10.0",
+ "nested",
+ "once_cell",
+ "pathdiff",
+ "petgraph",
+ "semver 0.11.0",
+ "serde",
+ "serde_json",
+ "supercow",
+ "target-spec 0.7.0",
 ]
 
 [[package]]
 name = "guppy-summaries"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e44283a7f83c77582b47e14e03d93a556fe06eefc3a0b32a65426f453d10c4d"
+checksum = "811b7332020d2a53cfe64049a52fd46d0761082b12d8b6b8f2c5b702f8bb2a24"
 dependencies = [
+ "cfg-if 1.0.0",
+ "diffus",
+ "semver 0.11.0",
+ "serde",
+ "toml",
+]
+
+[[package]]
+name = "guppy-summaries"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c526b51262ef5ed4de421ee6679bf0927a20310d5cc048abe89464b710a2a299"
+dependencies = [
+ "camino",
+ "cfg-if 1.0.0",
  "diffus",
  "semver 0.11.0",
  "serde",
@@ -3381,7 +3437,7 @@ dependencies = [
  "atomicwrites",
  "cfg-if 1.0.0",
  "diffy",
- "guppy",
+ "guppy 0.7.2",
  "pathdiff",
  "rayon",
  "serde",
@@ -4907,9 +4963,9 @@ checksum = "a9a7ab5d64814df0fe4a4b5ead45ed6c5f181ee3ff04ba344313a6c80446c5d4"
 
 [[package]]
 name = "once_cell"
-version = "1.5.2"
+version = "1.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13bd41f508810a131401606d54ac32a467c97172d74ba7662562ebba5ad07fa0"
+checksum = "af8b08b04175473088b46763e51ee54da5f9a164bc162f615b91bc179dbf15a3"
 
 [[package]]
 name = "oorandom"
@@ -6992,11 +7048,21 @@ checksum = "36474e732d1affd3a6ed582781b3683df3d0563714c59c39591e8ff707cf078e"
 
 [[package]]
 name = "target-spec"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "956c2aeccd9cc67a543e04559d46aedc8aa9cda15e5884bcfabb8217fd130e2a"
+checksum = "39920b3286e8e9585b3ba77becb3e682888f63b2be5326cd16264d8ad292d78e"
 dependencies = [
- "cfg-expr",
+ "cfg-expr 0.6.0",
+ "serde",
+]
+
+[[package]]
+name = "target-spec"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ac395241acf0f3d224dd2b07b334994adf6f37c904d1826867332ab8c6ddedbf"
+dependencies = [
+ "cfg-expr 0.7.1",
  "serde",
 ]
 
@@ -8053,7 +8119,7 @@ dependencies = [
  "determinator",
  "env_logger 0.8.3",
  "globset",
- "guppy",
+ "guppy 0.8.0",
  "hakari",
  "indexmap",
  "indoc",
@@ -8073,7 +8139,7 @@ name = "x-core"
 version = "0.1.0"
 dependencies = [
  "determinator",
- "guppy",
+ "guppy 0.8.0",
  "hakari",
  "hex",
  "indoc",
@@ -8088,7 +8154,7 @@ dependencies = [
 name = "x-lint"
 version = "0.1.0"
 dependencies = [
- "guppy",
+ "guppy 0.8.0",
  "hakari",
  "once_cell",
  "serde",
